@@ -1,0 +1,58 @@
+# -------------------------------------
+# 1. Logs & Debugging Files (로그 파일)
+# -------------------------------------
+# logs 폴더 전체 및 모든 로그 파일 무시
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# -------------------------------------
+# 2. Dependencies & Build Output (빌드 결과물)
+# -------------------------------------
+# NPM 종속성 및 Vite 빌드 결과물
+node_modules
+dist
+dist-ssr
+*.local
+
+
+# -------------------------------------
+# 3. Editor/IDE Files (에디터 설정 파일)
+# -------------------------------------
+# VS Code 설정
+.vscode/*
+!.vscode/extensions.json
+
+# IDE 설정 (IntelliJ, Android Studio 등)
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+
+# -----------------------------------------------------
+# 4. 🚨 API Keys & Environment Variables (가장 중요! 보안)
+# -----------------------------------------------------
+.env
+.env.*
+!.env.example
+
+
+# -----------------------------------------------------
+# 5. Capacitor / Android (모바일 플랫폼 빌드 파일)
+# -----------------------------------------------------
+# 안드로이드 빌드 캐시, 출력물, 로컬 설정 파일 무시
+android/app/build
+android/.gradle
+android/local.properties
+android/capture
+# Capacitor 생성 파일
+capacitor.config.ts.bak
