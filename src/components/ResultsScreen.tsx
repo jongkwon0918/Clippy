@@ -3,7 +3,7 @@ import { AnalysisResult, Task } from '../types';
 import { TaskCard } from './TaskCard';
 import { SummaryCard } from './SummaryCard';
 import { DecisionCard } from './DecisionCard';
-import { CheckAllIcon, DecisionIcon, RegenerateIcon, StartOverIcon } from './icons';
+import { BsCheckAll, BsPatchCheck, BsArrowRepeat, BsArrowCounterclockwise } from "react-icons/bs";
 
 interface ResultsScreenProps {
   result: AnalysisResult;
@@ -37,11 +37,11 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, fileName, 
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={onRegenerate} className="flex items-center gap-2 bg-red-100 text-primary font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors text-sm">
-            <RegenerateIcon className="h-4 w-4" />
+            <BsArrowRepeat className="h-4 w-4" />
             다시 생성
           </button>
           <button onClick={onStartOver} className="flex items-center gap-2 bg-gray-200 text-dark font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-            <StartOverIcon className="h-4 w-4" />
+            <BsArrowCounterclockwise className="h-4 w-4" />
             처음부터
           </button>
         </div>
@@ -52,7 +52,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, fileName, 
       {decisions.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center mb-4">
-                <DecisionIcon className="h-6 w-6 text-primary" />
+                <BsPatchCheck className="h-6 w-6 text-primary" />
                 <h3 className="text-lg font-bold text-dark ml-2">주요 결정사항</h3>
             </div>
             <div className="space-y-3">
@@ -66,7 +66,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, fileName, 
       {tasks.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center mb-4">
-                <CheckAllIcon className="h-6 w-6 text-primary" />
+                <BsCheckAll className="h-6 w-6 text-primary" />
                 <h3 className="text-lg font-bold text-dark ml-2">파트별 할 일</h3>
             </div>
             <div className="space-y-6">

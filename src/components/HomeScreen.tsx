@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { AnalysisResult, Team } from '../types';
-import { SummaryIcon, UserGroupIcon, CheckIcon, TrashIcon } from './icons';
+import { BsJournalText, BsPeople, BsCheckCircle, BsTrash } from "react-icons/bs";
 
 interface HomeScreenProps {
   analysisResult: AnalysisResult | null;
@@ -49,7 +49,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
         <div className="bg-red-50 p-6 rounded-full">
-          <SummaryIcon className="h-12 w-12 text-primary" />
+          <BsJournalText className="h-12 w-12 text-primary" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-dark mb-2">환영합니다!</h2>
@@ -70,13 +70,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Header Section */}
-      <div>
-        <h2 className="text-xl font-bold text-dark">홈 대시보드</h2>
-        <p className="text-sm text-medium">오늘의 업무 현황을 한눈에 확인하세요.</p>
-      </div>
-
-      {/* Today's Task Section */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-dark">오늘의 할 일</h3>
@@ -107,7 +100,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         ) : (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
-            <CheckIcon className="h-8 w-8 text-green-500 mx-auto mb-2" />
+            <BsCheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
             <p className="text-medium">진행 중인 우선 작업이 없습니다.</p>
           </div>
         )}
@@ -119,7 +112,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="bg-gradient-to-br from-red-500 to-orange-500 p-5 rounded-xl shadow-md text-white relative">
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3 opacity-90">
-              <SummaryIcon className="h-5 w-5" />
+              <BsJournalText className="h-5 w-5" />
               <span className="text-sm font-medium truncate max-w-[200px]">{fileName}</span>
             </div>
             <div className="space-y-2">
@@ -152,7 +145,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-50 p-2 rounded-lg text-blue-600">
-                    <UserGroupIcon className="h-5 w-5" />
+                    <BsPeople className="h-5 w-5" />
                   </div>
                   <div>
                     <h5 className="font-bold text-dark truncate max-w-[120px]">{team.name}</h5>
@@ -173,14 +166,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                         title="팀 삭제"
                     >
-                        <TrashIcon className="h-4 w-4" />
+                        <BsTrash className="h-4 w-4" />
                     </button>
                 </div>
               </div>
             ))
           ) : (
             <div className="col-span-full bg-white p-6 rounded-xl text-center border border-dashed border-gray-200">
-              <UserGroupIcon className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+              <BsPeople className="h-8 w-8 text-gray-300 mx-auto mb-2" />
               <p className="text-medium text-sm mb-1">생성된 팀이 없습니다.</p>
               <p className="text-xs text-gray-400">'팀 할 일' 탭에서 새로운 팀을 만들어보세요.</p>
             </div>

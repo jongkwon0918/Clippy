@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { Task } from '../types';
-import { XMarkIcon, CheckIcon, CalendarIcon } from './icons';
+import { BsX, BsCheckLg, BsCalendarEvent } from "react-icons/bs";
 import { v4 as uuidv4 } from 'uuid';
-
 interface ManualTaskModalProps {
   onConfirm: (task: Omit<Task, 'id' | 'completed' | 'source' | 'assignee' | 'department'>) => void;
   onCancel: () => void;
@@ -22,7 +20,6 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
     if (finalDeadline && includeTime) {
         finalDeadline = finalDeadline.replace('T', ' ');
     } else if (finalDeadline) {
-        // If date only, ensure it's just YYYY-MM-DD
         finalDeadline = finalDeadline.split('T')[0];
     } else {
         finalDeadline = '기한 없음';
@@ -48,12 +45,11 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200"
           >
-            <XMarkIcon className="h-5 w-5" />
+            <BsX className="h-5 w-5" />
           </button>
         </div>
         
         <div className="p-6 space-y-5">
-          {/* Description */}
           <div>
             <label className="block text-sm font-bold text-dark mb-2">할 일 내용</label>
             <input 
@@ -66,7 +62,6 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
             />
           </div>
 
-          {/* Priority */}
           <div>
             <label className="block text-sm font-bold text-dark mb-2">우선순위</label>
             <div className="flex gap-2">
@@ -88,14 +83,13 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
             </div>
           </div>
 
-          {/* Deadline */}
           <div>
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-bold text-dark">마감 기한</label>
                 <button 
                     onClick={() => {
                         setIncludeTime(!includeTime);
-                        setDeadline(''); // Reset to force re-input format
+                        setDeadline('');
                     }}
                     className="text-xs text-primary font-semibold hover:underline"
                 >
@@ -111,7 +105,7 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
                 />
                 {!deadline && (
                     <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400 text-sm">
-                        <CalendarIcon className="h-5 w-5" />
+                        <BsCalendarEvent className="h-5 w-5" />
                     </div>
                 )}
             </div>
@@ -131,7 +125,7 @@ export const ManualTaskModal: React.FC<ManualTaskModalProps> = ({ onConfirm, onC
                 description.trim() ? 'bg-primary hover:bg-primary-hover hover:shadow-lg hover:shadow-red-200 hover:-translate-y-0.5' : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              <CheckIcon className="h-5 w-5" />
+              <BsCheckLg className="h-5 w-5" />
               추가하기
             </button>
           </div>

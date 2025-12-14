@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Task, Team, User } from '../types';
 import { TaskCard } from './TaskCard';
-import { ClipboardIcon, CheckAllIcon } from './icons';
+import { BsCardChecklist, BsCheckAll } from "react-icons/bs";
 
 interface MyTasksScreenProps {
   tasks: Task[];
@@ -86,7 +86,7 @@ export const MyTasksScreen: React.FC<MyTasksScreenProps> = ({ tasks, teams, curr
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
-        <ClipboardIcon className="h-12 w-12 text-gray-300 mb-4" />
+        <BsCardChecklist className="h-12 w-12 text-gray-300 mb-4" />
         <p className="text-medium">등록된 할 일이 없습니다.</p>
       </div>
     );
@@ -147,7 +147,7 @@ export const MyTasksScreen: React.FC<MyTasksScreenProps> = ({ tasks, teams, curr
         {completedTasks.length > 0 && (
             <div>
                 <div className="flex items-center gap-2 mb-3 mt-6 border-t border-gray-100 pt-4">
-                    <CheckAllIcon className="h-5 w-5 text-gray-400" />
+                    <BsCheckAll className="h-5 w-5 text-gray-400" />
                     <h3 className="text-sm font-bold text-gray-500">완료된 할 일 ({completedTasks.length})</h3>
                 </div>
                 <div className="space-y-3 opacity-80">

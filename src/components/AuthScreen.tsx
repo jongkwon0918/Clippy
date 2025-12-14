@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 import { User } from '../types';
-import { PaperclipIcon } from './icons';
+// 파이어베이스 기능 임포트
+import { auth, db } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
+
+// ✅ 오리지널 선 스타일 클립 아이콘 (SVG 직접 정의로 라이브러리 의존성 제거)
+const PaperclipIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    strokeWidth={1.5} 
+    stroke="currentColor" 
+    className={className}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.122 2.122l7.81-7.81" />
+  </svg>
+);
 
 interface AuthScreenProps {
   onLogin: (user: User) => void;
@@ -8,80 +26,115 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [isSignup, setIsSignup] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
   const [name, setName] = useState(''); 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); 
 
-  // Helper to generate 6-char code
+  // 6자리 초대 코드 생성
   const generateInviteCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (isSignup) {
-      // Signup Logic
-      if (!username || !password || !name || !confirmPassword) {
-         setError('모든 필드를 입력해주세요.');
-         return;
-      }
-      if (password !== confirmPassword) {
-         setError('비밀번호가 일치하지 않습니다.');
-         return;
-      }
-      
-      const users = JSON.parse(localStorage.getItem('clippy_users') || '[]');
-      if (users.find((u: any) => u.username === username)) {
-          setError('이미 존재하는 아이디입니다.');
-          return;
-      }
+    try {
+        if (isSignup) {
+            // === 회원가입 로직 ===
+            if (!email || !password || !name || !confirmPassword) {
+                 throw new Error('모든 필드를 입력해주세요.');
+            }
+            if (password !== confirmPassword) {
+                 throw new Error('비밀번호가 일치하지 않습니다.');
+            }
 
-      // Create new user with invitation code
-      const newUser = { 
-          username, 
-          password, 
-          name,
-          invitationCode: generateInviteCode() 
-      };
+            // 1. 파이어베이스 인증 서버에 계정 생성
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            
+            // 2. 초대 코드 생성
+            const newInviteCode = generateInviteCode();
 
-      users.push(newUser);
-      localStorage.setItem('clippy_users', JSON.stringify(users));
-      
-      // Auto login after signup
-      const userSession = { username, name, invitationCode: newUser.invitationCode };
-      localStorage.setItem('clippy_session', JSON.stringify(userSession));
-      onLogin(userSession);
-    } else {
-      // Login Logic
-      const users = JSON.parse(localStorage.getItem('clippy_users') || '[]');
-      const user = users.find((u: any) => u.username === username && u.password === password);
-      
-      if (user) {
-          // Ensure migration for old users who might not have a code
-          if (!user.invitationCode) {
-              user.invitationCode = generateInviteCode();
-              // Update user in storage
-              const updatedUsers = users.map((u: any) => u.username === user.username ? user : u);
-              localStorage.setItem('clippy_users', JSON.stringify(updatedUsers));
-          }
+            // 3. 프로필 업데이트 (표시 이름 설정)
+            await updateProfile(user, { displayName: name });
 
-          const userSession = { username: user.username, name: user.name, invitationCode: user.invitationCode };
-          localStorage.setItem('clippy_session', JSON.stringify(userSession));
-          onLogin(userSession);
-      } else {
-          setError('아이디 또는 비밀번호가 올바르지 않습니다.');
-      }
+            // 4. Firestore DB에 사용자 추가 정보 저장
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                email: user.email,
+                name: name,
+                invitationCode: newInviteCode,
+                createdAt: new Date().toISOString()
+            });
+
+            // 5. 앱 로그인 상태 처리
+            onLogin({ 
+                username: user.email || '', 
+                name: name, 
+                invitationCode: newInviteCode 
+            });
+
+        } else {
+            // === 로그인 로직 ===
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Firestore에서 사용자 정보 가져오기
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                onLogin({ 
+                    username: user.email || '', 
+                    name: userData.name || user.displayName || '사용자', 
+                    invitationCode: userData.invitationCode || '' 
+                });
+            } else {
+                onLogin({
+                    username: user.email || '',
+                    name: user.displayName || '사용자',
+                    invitationCode: ''
+                });
+            }
+        }
+    } catch (err: any) {
+        console.error(err);
+        if (err instanceof FirebaseError) {
+            switch (err.code) {
+                case 'auth/email-already-in-use':
+                    setError('이미 사용 중인 이메일입니다.');
+                    break;
+                case 'auth/invalid-email':
+                    setError('유효하지 않은 이메일 형식입니다.');
+                    break;
+                case 'auth/weak-password':
+                    setError('비밀번호는 6자리 이상이어야 합니다.');
+                    break;
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+                    break;
+                default:
+                    setError('로그인/가입 중 오류가 발생했습니다: ' + err.code);
+            }
+        } else {
+            setError(err.message || '알 수 없는 오류가 발생했습니다.');
+        }
+    } finally {
+        setIsLoading(false);
     }
   };
 
   const toggleMode = () => {
       setIsSignup(!isSignup);
       setError('');
-      setUsername('');
+      setEmail('');
       setPassword('');
       setName('');
       setConfirmPassword('');
@@ -121,18 +174,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                         onChange={(e) => setName(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                         placeholder="예: 김철수"
+                        disabled={isLoading}
                     />
                 </div>
             )}
             
             <div>
-                <label className="block text-sm font-bold text-gray-600 mb-1">아이디</label>
+                <label className="block text-sm font-bold text-gray-600 mb-1">이메일</label>
                 <input 
-                    type="text" 
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                    placeholder="아이디를 입력하세요"
+                    placeholder="example@clippy.com"
+                    disabled={isLoading}
                 />
             </div>
 
@@ -144,6 +199,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                     placeholder="비밀번호를 입력하세요"
+                    disabled={isLoading}
                 />
             </div>
 
@@ -156,15 +212,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                         placeholder="비밀번호를 다시 입력하세요"
+                        disabled={isLoading}
                     />
                 </div>
             )}
 
             <button 
                 type="submit" 
-                className="w-full bg-primary text-white py-3.5 rounded-lg font-bold hover:bg-primary-hover transition-colors shadow-md mt-4"
+                disabled={isLoading}
+                className={`w-full bg-primary text-white py-3.5 rounded-lg font-bold transition-colors shadow-md mt-4 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-primary-hover'}`}
             >
-                {isSignup ? '가입하기' : '로그인'}
+                {isLoading ? '처리 중...' : (isSignup ? '가입하기' : '로그인')}
             </button>
           </form>
 
@@ -174,6 +232,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                   <button 
                     onClick={toggleMode}
                     className="text-primary font-bold hover:underline ml-1"
+                    disabled={isLoading}
                   >
                       {isSignup ? '로그인' : '회원가입'}
                   </button>

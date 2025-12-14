@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { FileTextIcon, ClipboardDocumentIcon, MicrophoneIcon, XMarkIcon, PencilSquareIcon } from './icons';
-
+import { BsFileEarmarkText, BsMic, BsClipboard, BsPencilSquare, BsX} from "react-icons/bs";
 interface UploadScreenProps {
   onFileUpload: (file: File) => void;
   onTextUpload: (text: string) => void;
@@ -41,7 +40,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onFileUpload, onText
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Text File Upload */}
         <label htmlFor="file-upload" className="group cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-primary hover:bg-red-50 transition-colors h-40">
-          <FileTextIcon className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
+          <BsFileEarmarkText className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
           <h3 className="font-semibold text-dark text-sm">파일 업로드</h3>
           <p className="text-[10px] text-gray-500 mt-1">.txt 파일</p>
         </label>
@@ -55,7 +54,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onFileUpload, onText
 
         {/* Audio File Upload */}
         <label htmlFor="audio-upload" className="group cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-primary hover:bg-red-50 transition-colors h-40">
-          <MicrophoneIcon className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
+          <BsMic className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
           <h3 className="font-semibold text-dark text-sm">음성 파일</h3>
           <p className="text-[10px] text-gray-500 mt-1">.mp3, .wav 등</p>
         </label>
@@ -69,7 +68,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onFileUpload, onText
 
         {/* Paste Text */}
         <div onClick={() => setShowTextModal(true)} className="group cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-primary hover:bg-red-50 transition-colors h-40">
-            <ClipboardDocumentIcon className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
+            <BsClipboard className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
             <h3 className="font-semibold text-dark text-sm">텍스트 입력</h3>
             <p className="text-[10px] text-gray-500 mt-1">직접 붙여넣기</p>
         </div>
@@ -77,7 +76,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onFileUpload, onText
         {/* Manual Create */}
         {onManualCreate && (
             <div onClick={onManualCreate} className="group cursor-pointer p-4 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-primary hover:bg-red-50 transition-colors h-40">
-                <PencilSquareIcon className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
+                <BsPencilSquare className="h-8 w-8 text-gray-400 group-hover:text-primary mb-2" />
                 <h3 className="font-semibold text-dark text-sm">직접 추가</h3>
                 <p className="text-[10px] text-gray-500 mt-1">할 일 직접 생성</p>
             </div>
@@ -91,7 +90,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onFileUpload, onText
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 className="font-bold text-lg">텍스트 직접 입력</h3>
                     <button onClick={() => setShowTextModal(false)} className="text-gray-400 hover:text-gray-600">
-                        <XMarkIcon className="h-6 w-6" />
+                        <BsX className="h-6 w-6" />
                     </button>
                 </div>
                 <div className="p-4 flex-grow">

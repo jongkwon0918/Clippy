@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogoutIcon, UserIcon, EditIcon, CheckIcon, XMarkIcon, TrashIcon } from './icons';
+import { BsBoxArrowRight, BsPerson, BsPencil, BsCheckLg, BsX, BsTrash3 } from "react-icons/bs";
 import { User } from '../types';
 
 interface SettingsScreenProps {
@@ -24,7 +24,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
     <div className="space-y-6 pb-20">
       <h2 className="text-xl font-bold text-dark">설정</h2>
       
-      {/* Account Section */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100">
           <div className="flex justify-between items-center mb-2">
@@ -34,7 +33,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
                   onClick={() => setIsEditing(true)}
                   className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
                 >
-                    <EditIcon className="h-4 w-4" />
+                    <BsPencil className="h-4 w-4" />
                     수정
                 </button>
             )}
@@ -42,7 +41,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
           
           <div className="flex items-center gap-3 mb-4 p-2 bg-gray-50 rounded-lg">
               <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 flex-shrink-0">
-                  <UserIcon className="h-6 w-6" />
+                  <BsPerson className="h-6 w-6" />
               </div>
               <div className="flex-grow">
                   {isEditing ? (
@@ -56,10 +55,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
                             autoFocus
                           />
                           <button onClick={handleSaveProfile} className="p-1 text-green-600 hover:bg-green-100 rounded">
-                              <CheckIcon className="h-4 w-4" />
+                              <BsCheckLg className="h-4 w-4" />
                           </button>
                           <button onClick={() => { setIsEditing(false); setEditedName(user?.name || ''); }} className="p-1 text-gray-500 hover:bg-gray-200 rounded">
-                              <XMarkIcon className="h-4 w-4" />
+                              <BsX className="h-4 w-4" />
                           </button>
                       </div>
                   ) : (
@@ -71,7 +70,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
               </div>
           </div>
 
-          {/* Invitation Code Display */}
           {user?.invitationCode && (
             <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between">
                 <div>
@@ -98,7 +96,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
               }}
               className="flex items-center w-full text-left text-gray-600 hover:bg-gray-50 p-2 rounded-lg transition-colors"
           >
-              <LogoutIcon className="h-5 w-5 mr-2" />
+              <BsBoxArrowRight className="h-5 w-5 mr-2" />
               <span>로그아웃</span>
           </button>
         </div>
@@ -111,7 +109,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
         </div>
       </div>
 
-      {/* Delete Account Section */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
         <div className="p-4">
              <button 
@@ -122,7 +119,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onLogout, 
                }}
                className="flex items-center w-full text-left text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
              >
-               <TrashIcon className="h-5 w-5 mr-2" />
+               <BsTrash3 className="h-5 w-5 mr-2" />
                <span>탈퇴하기 (계정 삭제)</span>
              </button>
         </div>

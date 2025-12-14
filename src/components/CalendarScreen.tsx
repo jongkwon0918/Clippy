@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Task, User } from '../types';
 import { TaskCard } from './TaskCard';
-import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from './icons';
+import { BsChevronLeft, BsChevronRight, BsX } from "react-icons/bs";
 
 interface CalendarScreenProps {
   tasks: Task[];
@@ -25,8 +24,6 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
     return tasks.reduce((acc, task) => {
         if (task.deadline && task.deadline !== '기한 없음') {
             try {
-                // Support 'YYYY-MM-DD' and 'YYYY-MM-DD HH:mm' and ISO formats
-                // Extract strictly the YYYY-MM-DD part for the key
                 const cleanDate = task.deadline.replace('T', ' ').trim();
                 const match = cleanDate.match(/^(\d{4}-\d{2}-\d{2})/);
                 
@@ -34,7 +31,6 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
                 if (match) {
                     dateKey = match[1];
                 } else {
-                    // Fallback for ISO strings or other parseable formats
                     const d = new Date(cleanDate);
                     if (!isNaN(d.getTime())) {
                          const year = d.getFullYear();
@@ -77,16 +73,13 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
 
   const renderDays = () => {
     const days = [];
-    // Blank days before the start of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(<div key={`blank-${i}`} className="border-r border-b border-gray-200 min-h-[80px]"></div>);
     }
 
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       
-      // Construct key manually to avoid timezone shifts
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const d = String(date.getDate()).padStart(2, '0');
@@ -126,20 +119,18 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md pb-20">
-      {/* Calendar Header */}
       <div className="flex justify-between items-center mb-6">
         <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-100">
-          <ChevronLeftIcon className="h-6 w-6 text-gray-600" />
+          <BsChevronLeft className="h-6 w-6 text-gray-600" />
         </button>
         <h2 className="text-xl font-bold text-dark">
           {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
         </h2>
         <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-100">
-          <ChevronRightIcon className="h-6 w-6 text-gray-600" />
+          <BsChevronRight className="h-6 w-6 text-gray-600" />
         </button>
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-7 border-t border-l border-gray-200">
         {WEEKDAYS.map(day => (
           <div key={day} className="text-center font-semibold text-sm text-gray-500 py-2 border-r border-b border-gray-200 bg-gray-50">{day}</div>
@@ -147,7 +138,6 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
         {renderDays()}
       </div>
       
-      {/* Selected Day's Tasks Panel */}
       {selectedDate && (
         <>
         <div className="fixed inset-0 bg-black bg-opacity-30 z-20" onClick={() => setSelectedDate(null)}></div>
@@ -157,7 +147,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ tasks, currentUs
                     {selectedDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}
                 </h3>
                 <button onClick={() => setSelectedDate(null)} className="p-2 rounded-full hover:bg-gray-100">
-                    <XMarkIcon className="h-6 w-6 text-gray-600" />
+                    <BsX className="h-6 w-6 text-gray-600" />
                 </button>
             </div>
             <div className="overflow-y-auto space-y-3 pb-10">

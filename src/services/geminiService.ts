@@ -1,15 +1,19 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { AnalysisResult, Task } from '../types';
+import { AnalysisResult, Task, MeetingLog, InsightReport } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set. .env 파일을 확인해주세요.");
+  console.error("API Key가 없습니다. .env 파일을 확인해주세요.");
+  throw new Error("API Key가 설정되지 않았습니다.");
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
+const MODEL_NAME = "gemini-2.5-flash"; 
+
+// 1. 회의 분석용 스키마 (Description 유지 + SchemaType 적용)
 const responseSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -65,16 +69,40 @@ const responseSchema = {
   required: ["summary", "tasks", "decisions"]
 };
 
+// 2. 팀 인사이트용 스키마 (Description 유지 + SchemaType 적용)
+const insightSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    items: {
+      type: SchemaType.ARRAY,
+      description: "프로젝트의 돌이킬 수 없는 중요한 결정 5~7가지 목록",
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title: { type: SchemaType.STRING, description: "결정 주제 (예: 기술 스택 변경)" },
+          decision: { type: SchemaType.STRING, description: "최종 결정 내용" },
+          rationale: { type: SchemaType.STRING, description: "결정의 이유 및 배경" },
+          controversy: { type: SchemaType.STRING, description: "당시 치열했던 논의 쟁점 및 반대 의견 요약" },
+          impact: { type: SchemaType.STRING, description: "중요도", enum: ["Critical", "Major"] }
+        },
+        required: ["title", "decision", "rationale", "controversy", "impact"]
+      }
+    }
+  },
+  required: ["items"]
+};
+
+// 기능 1: 개별 회의록 분석
 export async function analyzeContent(content: string, mimeType?: string, teamMembers?: string[]): Promise<AnalysisResult> {
   const now = new Date();
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   const currentDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} (${days[now.getDay()]}요일)`;
 
-  // Construct team member info string if available
   const teamInfo = teamMembers && teamMembers.length > 0 
     ? `현재 팀 멤버 목록: [${teamMembers.join(', ')}].` 
     : "";
 
+  // ✅ 상세한 시스템 프롬프트 적용
   const systemInstruction = `
     당신은 Clippy라는 이름의 전문 회의 비서입니다. 제공된 회의록(텍스트 또는 오디오)을 분석해 주세요.
     당신의 임무는 요약, 실행 항목(할 일), 그리고 주요 결정 사항을 추출하는 것입니다.
@@ -94,18 +122,17 @@ export async function analyzeContent(content: string, mimeType?: string, teamMem
     결과는 제공된 JSON 스키마에 따라 엄격하게 반환해 주세요. 추가적인 텍스트나 설명은 포함하지 마세요.
   `;
 
-  // Initialize the model with system instruction
+  // ✅ 모델 초기화 시 systemInstruction 주입
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: MODEL_NAME,
+    systemInstruction: systemInstruction,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: responseSchema as any,
-    },
-    systemInstruction: systemInstruction,
+    }
   });
 
   let parts: any[] = [];
-
   if (mimeType && mimeType.startsWith('audio/')) {
       // Audio Input
       parts = [
@@ -128,17 +155,16 @@ export async function analyzeContent(content: string, mimeType?: string, teamMem
     const result = await model.generateContent(parts);
     const response = await result.response;
     const jsonText = response.text();
-
-    const parsedResult = JSON.parse(jsonText) as Omit<AnalysisResult, 'tasks'> & { tasks: Omit<Task, 'id' | 'completed'>[] };
+    const parsedResult = JSON.parse(jsonText);
 
     // Add unique IDs and completed status to tasks
-    const tasksWithIds: Task[] = parsedResult.tasks.map(task => ({
+    const tasksWithIds: Task[] = parsedResult.tasks.map((task: any) => ({
       ...task,
       id: uuidv4(),
       completed: false
     }));
     
-    const decisionsWithIds = parsedResult.decisions.map(decision => ({
+    const decisionsWithIds = parsedResult.decisions.map((decision: any) => ({
       ...decision,
       id: uuidv4(),
     }));
@@ -148,9 +174,54 @@ export async function analyzeContent(content: string, mimeType?: string, teamMem
         tasks: tasksWithIds,
         decisions: decisionsWithIds,
     };
-
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error("Gemini API로 콘텐츠를 처리하는 데 실패했습니다.");
+    console.error("Gemini API Error:", error);
+    throw new Error("분석에 실패했습니다. API 키와 네트워크 상태를 확인해주세요.");
   }
+}
+
+// 기능 2: 팀 인사이트 생성
+export async function generateTeamInsights(history: MeetingLog[]): Promise<InsightReport> {
+    if (history.length === 0) {
+        return { generatedAt: new Date().toISOString(), items: [] };
+    }
+
+    const historyText = history.map((log, index) => `
+    [회의 #${index + 1}] 날짜: ${log.date} | 파일명: ${log.fileName}
+    요약: ${log.summary}
+    결정사항: ${log.decisions.map(d => `- ${d.description}`).join(' ')}
+    `).join('\n\n');
+
+    const systemInstruction = `
+        당신은 프로젝트 관리 전문가입니다. 아래 제공된 ${history.length}건의 회의 기록들을 종합 분석하여 프로젝트의 흐름을 파악하세요.
+        
+        **임무:**
+        초기 설계 결정, 기술 스택 변경, 방향 전환 등 프로젝트의 운명을 바꾼 **'돌이킬 수 없는 중요한 결정' 5~7가지**를 선정하여 정리하세요.
+        각 항목마다 결정 내용, 이유, 그리고 당시의 **쟁점 및 반대 의견(Controversy)**을 상세히 기술하세요.
+    `;
+
+    // ✅ 여기도 모델 초기화 시 systemInstruction 주입
+    const model = genAI.getGenerativeModel({
+        model: MODEL_NAME,
+        systemInstruction: systemInstruction,
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: insightSchema as any,
+        }
+    });
+
+    try {
+        const result = await model.generateContent([{ text: `다음 회의 기록을 바탕으로 리포트를 작성해 주세요:\n\n${historyText}` }]);
+        const response = await result.response;
+        const jsonText = response.text();
+        const parsed = JSON.parse(jsonText);
+        
+        return {
+            generatedAt: new Date().toISOString(),
+            items: parsed.items
+        };
+    } catch (error) {
+        console.error("Insight Error:", error);
+        throw new Error("인사이트 생성 중 오류가 발생했습니다.");
+    }
 }

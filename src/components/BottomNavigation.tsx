@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { HomeIcon, ClipboardIcon, UserGroupIcon, CalendarDaysIcon, CogIcon } from './icons';
+import { BsHouse, BsCardChecklist, BsPeople, BsCalendar2Check, BsGear } from "react-icons/bs";
 import { TabView } from '../App';
 
 interface BottomNavigationProps {
@@ -10,11 +9,11 @@ interface BottomNavigationProps {
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onTabChange }) => {
   const tabs: { id: TabView; label: string; icon: React.ElementType }[] = [
-    { id: 'home', label: '홈', icon: HomeIcon },
-    { id: 'my-tasks', label: '할 일', icon: ClipboardIcon },
-    { id: 'team-tasks', label: '팀 할 일', icon: UserGroupIcon },
-    { id: 'calendar', label: '캘린더', icon: CalendarDaysIcon },
-    { id: 'settings', label: '설정', icon: CogIcon },
+    { id: 'home', label: '홈', icon: BsHouse },
+    { id: 'my-tasks', label: '할 일', icon: BsCardChecklist },
+    { id: 'team-tasks', label: '팀 할 일', icon: BsPeople },
+    { id: 'calendar', label: '캘린더', icon: BsCalendar2Check },
+    { id: 'settings', label: '설정', icon: BsGear },
   ];
 
   return (
@@ -32,10 +31,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
               }`}
             >
               <Icon 
-                className="h-6 w-6 transition-all duration-200" 
-                strokeWidth={isActive ? 2 : 1.5} 
+                className={`h-6 w-6 transition-all duration-200 ${isActive ? 'scale-110' : ''}`} 
               />
-              <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
+              <span className={`text-[10px] mt-1 font-medium ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
             </button>
           );
         })}

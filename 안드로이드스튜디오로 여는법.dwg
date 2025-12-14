@@ -1,0 +1,9 @@
+1. 프롬프트열기
+
+2. cd C:\Users\dog49\clippy-app (앱 경로로)
+
+3. npm run build (웹 코드 빌드)
+
+4. npx cap sync (안드로이드 동기화)
+
+5. npx cap open android (안드로이드 스튜디오 열기)
