@@ -12,7 +12,6 @@ import { AnalysisResult, Task, Team, Announcement, User, MeetingLog, InsightRepo
 import { Spinner } from './components/Spinner';
 import { BsPlusLg, BsX } from "react-icons/bs";
 import { ReviewScreen } from './components/ReviewScreen';
-import { ResultsScreen } from './components/ResultsScreen';
 import { AuthScreen } from './components/AuthScreen';
 import { ManualTaskModal } from './components/ManualTaskModal';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,7 +34,8 @@ const App: React.FC = () => {
   const [showManualTaskModal, setShowManualTaskModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [showResultsScreen, setShowResultsScreen] = useState<boolean>(false);
+  
+  // showResultsScreen 제거됨
 
   // 데이터 상태 (Firestore와 동기화됨)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -157,6 +157,7 @@ const App: React.FC = () => {
   };
   
   const handleDeleteAccount = async () => {
+    // 파이어베이스 사용자 삭제는 보안상 재인증이 필요하므로 여기선 로그아웃 처리만 예시로 둠
     if (window.confirm("계정 삭제를 위해 로그아웃 합니다. (실제 삭제는 파이어베이스 콘솔에서 처리 필요)")) {
         await signOut(auth);
         setActiveTab('home');
@@ -178,9 +179,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNavigateToMyTasks = () => { setActiveTab('my-tasks'); setShowResultsScreen(false); };
-  const handleNavigateToTeam = (teamId: string) => { setTargetTeamId(teamId); setActiveTab('team-tasks'); setShowResultsScreen(false); };
-  const handleTabChange = (tab: TabView) => { setActiveTab(tab); setShowResultsScreen(false); };
+  const handleNavigateToMyTasks = () => { setActiveTab('my-tasks'); };
+  const handleNavigateToTeam = (teamId: string) => { setTargetTeamId(teamId); setActiveTab('team-tasks'); };
+  const handleTabChange = (tab: TabView) => { setActiveTab(tab); };
 
   // AI 분석 로직 (변경 없음)
   const processAnalysis = async (content: string, name: string, context: 'personal' | 'team' = 'personal', teamId?: string, mimeType?: string) => {
@@ -197,7 +198,7 @@ const App: React.FC = () => {
       }
       const result = await analyzeContent(content, mimeType, teamMembers);
       
-      // ✅ [수정] TypeScript 에러 해결: 로컬 상태에는 undefined 허용
+      // ✅ [수정 1] 로컬 상태에는 undefined 허용하여 TS 에러 해결 (|| null 제거)
       const enhancedTasks = result.tasks.map(task => ({ 
           ...task, 
           source: context, 
@@ -219,7 +220,6 @@ const App: React.FC = () => {
   const handleRegenerate = async () => {
       if (!lastUploadedData || !currentUploadContext) return;
       setShowReviewModal(false);
-      setShowResultsScreen(false);
       setPendingAnalysisResult(null);
       await processAnalysis(lastUploadedData.content, lastUploadedData.name, currentUploadContext.context, currentUploadContext.teamId, lastUploadedData.mimeType);
   };
@@ -234,13 +234,14 @@ const App: React.FC = () => {
 
         // 1. 할 일 저장
         selectedTasks.forEach(task => {
+            // 새 문서 참조 생성
             const taskRef = doc(collection(db, "tasks"));
             const taskData = {
                 ...task,
-                id: taskRef.id, 
+                id: taskRef.id, // ID 동기화
                 relatedSummary: pendingAnalysisResult.summary,
                 assignee: (currentUploadContext.context === 'personal' && currentUser) ? currentUser.name : task.assignee,
-                // ✅ [핵심 수정] DB 저장 시에는 null로 변환 (undefined 방지)
+                // ✅ [수정 2] DB 저장 시점에만 undefined를 null로 변환 (Firebase 에러 방지)
                 teamId: task.teamId || null 
             };
             batch.set(taskRef, taskData);
@@ -266,8 +267,16 @@ const App: React.FC = () => {
 
         setShowReviewModal(false);
         setPendingAnalysisResult(null);
+        
+        // 결과 화면 없이 바로 목록으로 이동
+        if (currentUploadContext.context === 'team' && currentUploadContext.teamId) {
+            setTargetTeamId(currentUploadContext.teamId);
+            setActiveTab('team-tasks');
+        } else {
+            setActiveTab('my-tasks');
+        }
+
         setCurrentUploadContext(null);
-        setShowResultsScreen(true);
     } catch (e) {
         console.error("Save failed", e);
         alert("저장에 실패했습니다.");
@@ -277,7 +286,6 @@ const App: React.FC = () => {
   };
 
   const handleCancelReview = () => { setShowReviewModal(false); setPendingAnalysisResult(null); setCurrentUploadContext(null); setLastUploadedData(null); };
-  const handleStartOver = () => { setShowResultsScreen(false); setLastUploadedData(null); setActiveTab('home'); };
   
   // ✅ 수동 할 일 추가
   const handleManualTaskCreate = async (taskData: any) => { 
@@ -285,11 +293,12 @@ const App: React.FC = () => {
       const assigneeName = currentUser?.name || '나';
       
       try {
+          // Firestore에 추가
           await addDoc(collection(db, "tasks"), {
               ...taskData,
               completed: false,
               source: manualContext.type,
-              // ✅ [핵심 수정] DB 저장 시에는 null로 변환
+              // ✅ [수정 2] DB 저장 시점에만 undefined를 null로 변환
               teamId: manualContext.teamId || null, 
               assignee: assigneeName,
               department: isTeam ? '팀 업무' : '개인',
@@ -297,6 +306,9 @@ const App: React.FC = () => {
           });
           setShowManualTaskModal(false); 
           setShowUploadModal(false);
+          // 수동 생성 후에도 목록으로 이동
+          if (manualContext.type === 'team') setActiveTab('team-tasks');
+          else setActiveTab('my-tasks');
       } catch (e) {
           console.error("Manual task create failed", e);
       }
@@ -354,7 +366,7 @@ const App: React.FC = () => {
       }
   };
 
-  // ✅ 팀 나가기
+  // ✅ 팀 나가기 (멤버 배열에서 제거)
   const handleLeaveTeam = async (teamId: string) => {
       if (!currentUser) return;
       try {
@@ -371,9 +383,10 @@ const App: React.FC = () => {
       }
   };
 
-  // ✅ 팀 참가
+  // ✅ 팀 참가 (초대 코드로 찾기)
   const handleJoinTeam = async (teamId: string, inviteCode: string) => {
       try {
+          // 1. 초대 코드로 유저 찾기
           const q = query(collection(db, "users"), where("invitationCode", "==", inviteCode));
           const querySnapshot = await getDocs(q);
           
@@ -386,6 +399,7 @@ const App: React.FC = () => {
           const invitedUserData = invitedUserDoc.data();
           const invitedUserName = invitedUserData.name;
 
+          // 2. 팀 문서 업데이트 (멤버 추가)
           const teamRef = doc(db, "teams", teamId);
           await updateDoc(teamRef, {
               members: arrayUnion(invitedUserName)
@@ -412,6 +426,7 @@ const App: React.FC = () => {
       }
   };
 
+  // ... (기타 핸들러들)
   const handleFileUpload = useCallback(async (file: File) => {
     if (!file) return;
     const reader = new FileReader();
@@ -456,7 +471,6 @@ const App: React.FC = () => {
   const getCurrentTeamMembers = () => { if (currentUploadContext?.context === 'team' && currentUploadContext.teamId) return teams.find(t => t.id === currentUploadContext.teamId)?.members; return undefined; };
 
   const renderContent = () => {
-    if (showResultsScreen && analysisResult) return <ResultsScreen result={analysisResult} fileName={fileName} onRegenerate={handleRegenerate} onStartOver={handleStartOver} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} />;
     if (isLoading && !showUploadModal && !showReviewModal) return <div className="fixed inset-0 z-50 bg-white flex items-center justify-center"><Spinner /></div>;
 
     switch (activeTab) {
@@ -497,7 +511,7 @@ const App: React.FC = () => {
         {error && !showUploadModal && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert"><strong className="font-bold">오류:</strong><span className="block sm:inline ml-2">{error}</span></div>}
         {renderContent()}
       </main>
-      {!showUploadModal && !showReviewModal && !isLoading && !showResultsScreen && activeTab === 'home' && (
+      {!showUploadModal && !showReviewModal && !isLoading && activeTab === 'home' && (
         <button onClick={() => { setManualContext({ type: 'personal' }); setShowUploadModal(true); }} className="fixed bottom-24 right-6 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-hover transition-transform hover:scale-105 z-40"><BsPlusLg className="h-6 w-6" /></button>
       )}
       {showUploadModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"><div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden relative min-h-[400px] flex flex-col"><button onClick={() => setShowUploadModal(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-50"><BsX className="h-6 w-6" /></button><div className="p-6 flex-grow flex flex-col">{isLoading ? <Spinner /> : <UploadScreen onFileUpload={handleFileUpload} onTextUpload={handleTextUpload} onAudioUpload={handleAudioUpload} onManualCreate={() => setShowManualTaskModal(true)} />}</div></div></div>}
